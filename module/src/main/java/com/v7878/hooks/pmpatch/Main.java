@@ -11,7 +11,7 @@ import com.v7878.zygisk.ZygoteLoader;
 @DoNotShrinkType
 @DoNotObfuscateType
 public class Main {
-    public static String TAG = "PM_PATCH_TEST";
+    public static String TAG = "PM_PATCH";
 
     @SuppressWarnings({"unused", "ConfusingMainMethod"})
     @DoNotShrink
