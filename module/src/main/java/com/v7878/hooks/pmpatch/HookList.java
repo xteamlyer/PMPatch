@@ -1,13 +1,41 @@
 package com.v7878.hooks.pmpatch;
 
 import static android.content.pm.PackageManager.SIGNATURE_MATCH;
+import static com.v7878.unsafe.Reflection.fieldOffset;
+import static com.v7878.unsafe.Reflection.getDeclaredField;
+import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
+
+import com.v7878.unsafe.AndroidUnsafe;
+import com.v7878.unsafe.invoke.Transformers;
+import com.v7878.vmtools.Hooks.HookTransformer;
+
+import java.security.Signature;
 
 public class HookList {
 
     public static void init(BulkHooker hooks) {
         if (BuildConfig.PATCH_1) {
-            hooks.add(HTF.TRUE, "java.security.Signature", "verify", "boolean", "byte[]");
-            hooks.add(HTF.TRUE, "java.security.Signature", "verify", "boolean", "byte[]", "int", "int");
+            int state_offset = fieldOffset(getDeclaredField(Signature.class, "state"));
+
+            HookTransformer verify_impl = (original, stack) -> {
+                var accessor = stack.accessor();
+
+                Signature thiz = accessor.getReference(0);
+                switch (thiz.getAlgorithm().toLowerCase()) {
+                    case "rsa-sha1", "sha1withrsa", "sha256withdsa", "sha256withrsa" -> {
+                        int state = AndroidUnsafe.getIntO(thiz, state_offset);
+                        if (state == 3 /* Signature.VERIFY */) {
+                            stack.accessor().setBoolean(RETURN_VALUE_IDX, true);
+                            return;
+                        }
+                    }
+                }
+
+                Transformers.invokeExactWithFrame(original, stack);
+            };
+
+            hooks.add(verify_impl, "java.security.Signature", "verify", "boolean", "byte[]");
+            hooks.add(verify_impl, "java.security.Signature", "verify", "boolean", "byte[]", "int", "int");
 
             hooks.add(HTF.TRUE, "com.android.org.conscrypt.OpenSSLSignature", "engineVerify", "boolean", "byte[]");
         }
