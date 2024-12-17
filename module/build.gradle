@@ -14,6 +14,14 @@ android {
         targetSdk 35
         versionCode 1_000_000
         versionName "v1.0.0"
+
+        buildConfigField("boolean", "PATCH_1", "true")
+        buildConfigField("boolean", "PATCH_2", "true")
+        buildConfigField("boolean", "PATCH_3", "true")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
