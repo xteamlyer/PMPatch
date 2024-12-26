@@ -45,8 +45,25 @@ public class HookList {
         }
 
         if (BuildConfig.PATCH_3) {
-            hooks.add(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapability", "boolean", "android.content.pm.SigningDetails", "int");
-            hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "android.content.pm.PackageParser$SigningDetails", "int");
+            HookTransformer check_impl = (original, stack) -> {
+                boolean call_original = false;
+                var trace = Thread.currentThread().getStackTrace();
+                for (var element : trace) {
+                    if (element.getMethodName().equals("reconcilePackages")) {
+                        call_original = true;
+                        break;
+                    }
+                }
+
+                if (call_original) {
+                    Transformers.invokeExactWithFrame(original, stack);
+                } else {
+                    stack.accessor().setBoolean(RETURN_VALUE_IDX, true);
+                }
+            };
+
+            hooks.add(check_impl, "android.content.pm.SigningDetails", "checkCapability", "boolean", "android.content.pm.SigningDetails", "int");
+            hooks.add(check_impl, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "android.content.pm.PackageParser$SigningDetails", "int");
 
             hooks.add(HTF.return_constant(SIGNATURE_MATCH), "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
             hooks.add(HTF.return_constant(SIGNATURE_MATCH), "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
