@@ -13,8 +13,8 @@ import java.security.Signature;
 
 public class HookList {
 
-    public static void init(BulkHooker hooks) {
-        if (BuildConfig.PATCH_1) {
+    public static void init(BulkHooker hooks, boolean system_server) {
+        if (!system_server && BuildConfig.PATCH_1) {
             int state_offset = fieldOffset(getDeclaredField(Signature.class, "state"));
 
             HookTransformer verify_impl = (original, stack) -> {
@@ -40,11 +40,11 @@ public class HookList {
             hooks.add(HTF.TRUE, "com.android.org.conscrypt.OpenSSLSignature", "engineVerify", "boolean", "byte[]");
         }
 
-        if (BuildConfig.PATCH_2) {
+        if (!system_server && BuildConfig.PATCH_2) {
             hooks.add(HTF.TRUE, "java.security.MessageDigest", "isEqual", "boolean", "byte[]", "byte[]");
         }
 
-        if (BuildConfig.PATCH_3) {
+        if (system_server && BuildConfig.PATCH_3) {
             HookTransformer check_impl = (original, stack) -> {
                 boolean call_original = false;
                 var trace = Thread.currentThread().getStackTrace();

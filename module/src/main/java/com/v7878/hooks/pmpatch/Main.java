@@ -19,7 +19,10 @@ public class Main {
     public static void main() throws Throwable {
         Log.w(TAG, "Injected into " + ZygoteLoader.getPackageName());
         try {
-            MethodAndArgsCallerHook.init();
+            if (ZygoteLoader.PACKAGE_SYSTEM_SERVER.equals(ZygoteLoader.getPackageName())) {
+                MethodAndArgsCallerHook.init();
+            }
+            ApplicationHook.init(ClassLoader.getSystemClassLoader());
         } catch (Throwable th) {
             Log.e(TAG, "Exception", th);
         }
