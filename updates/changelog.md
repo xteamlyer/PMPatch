@@ -1,1 +1,2 @@
-- First release
+- Fixes for Android 13 and 15
+- Four different builds for different patches

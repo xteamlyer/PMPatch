@@ -14,8 +14,8 @@ android {
     defaultConfig {
         minSdk 26
         targetSdk 35
-        versionCode 1_000_000
-        versionName "v1.0.0"
+        versionCode 1_000_001
+        versionName "v1.0.1"
     }
 
     buildFeatures {
@@ -45,6 +45,7 @@ android {
                 packages(ZygoteLoader.ALL_PACKAGES)
 
                 id = "com_v7878_pmpatch_12"
+                name = "PMPatch12"
                 updateJson = "${updateJsonBase}update_12.json"
                 archiveName = "PMPatch12"
             }
@@ -60,6 +61,7 @@ android {
                 packages(ZygoteLoader.PACKAGE_SYSTEM_SERVER)
 
                 id = "com_v7878_pmpatch_3"
+                name = "PMPatch3"
                 updateJson = "${updateJsonBase}update_3.json"
                 archiveName = "PMPatch3"
             }
@@ -75,6 +77,7 @@ android {
                 packages(ZygoteLoader.ALL_PACKAGES)
 
                 id = "com_v7878_pmpatch_full"
+                name = "PMPatchFull"
                 updateJson = "${updateJsonBase}update_full.json"
                 archiveName = "PMPatchFull"
             }
@@ -90,6 +93,7 @@ android {
                 packages(ZygoteLoader.PACKAGE_SYSTEM_SERVER)
 
                 id = "com_v7878_pmpatch"
+                name = "PMPatchLegacy"
                 updateJson = "${updateJsonBase}update.json"
                 archiveName = "PMPatchLegacy"
             }
@@ -107,7 +111,6 @@ android {
 }
 
 zygisk {
-    name = "PMPatch"
     author = "v7878"
     description = "Disable signature verification For Android"
     entrypoint = "com.v7878.hooks.pmpatch.Main"
