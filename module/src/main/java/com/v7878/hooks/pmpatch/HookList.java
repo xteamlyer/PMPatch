@@ -1,6 +1,7 @@
 package com.v7878.hooks.pmpatch;
 
 import static android.content.pm.PackageManager.SIGNATURE_MATCH;
+import static android.os.Build.VERSION.SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
@@ -45,7 +46,8 @@ public class HookList {
         }
 
         if (system_server && BuildConfig.PATCH_3) {
-            HookTransformer check_impl = (original, stack) -> {
+            HookTransformer check_impl = !(SDK_INT == 33 || SDK_INT == 34) ?
+                    HTF.TRUE : (original, stack) -> {
                 boolean call_original = false;
                 var trace = Thread.currentThread().getStackTrace();
                 for (var element : trace) {
