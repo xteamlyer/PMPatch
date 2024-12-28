@@ -1,2 +1,1 @@
-- Fixes for Android 13 and 15
-- Four different builds for different patches
+- Fixed installation of applications with different signatures on some new devices
