@@ -8,13 +8,23 @@ import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
 import com.v7878.unsafe.AndroidUnsafe;
 import com.v7878.unsafe.invoke.Transformers;
 import com.v7878.vmtools.Hooks.HookTransformer;
+import com.v7878.zygisk.ZygoteLoader;
 
 import java.security.Signature;
 
 public class HookList {
 
+    private static boolean booleanProperty(String name) {
+        if (BuildConfig.USE_CONFIG) {
+            return Boolean.parseBoolean(ZygoteLoader.getProperties()
+                    .getOrDefault(name, "true"));
+        }
+        return true;
+    }
+
     public static void init(BulkHooker hooks, boolean system_server) {
-        if (!system_server && BuildConfig.PATCH_1) {
+        if (!system_server && BuildConfig.PATCH_1
+                && booleanProperty("PATCH_1")) {
             int state_offset = fieldOffset(getDeclaredField(Signature.class, "state"));
 
             HookTransformer verify_impl = (original, frame) -> {
@@ -41,11 +51,13 @@ public class HookList {
             hooks.add(HTF.TRUE, "com.android.org.conscrypt.OpenSSLSignature", "engineVerify", "boolean", "byte[]");
         }
 
-        if (!system_server && BuildConfig.PATCH_2) {
+        if (!system_server && BuildConfig.PATCH_2
+                && booleanProperty("PATCH_2")) {
             hooks.add(HTF.TRUE, "java.security.MessageDigest", "isEqual", "boolean", "byte[]", "byte[]");
         }
 
-        if (system_server && BuildConfig.PATCH_3) {
+        if (system_server && BuildConfig.PATCH_3
+                && booleanProperty("PATCH_3")) {
             hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "android.content.pm.PackageParser$SigningDetails", "int");
             hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "java.lang.String", "int");
             hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm./PackageParser$SigningDetails", "int");

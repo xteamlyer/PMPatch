@@ -53,6 +53,7 @@ android {
             buildConfigField("boolean", "PATCH_1", "true")
             buildConfigField("boolean", "PATCH_2", "true")
             buildConfigField("boolean", "PATCH_3", "false")
+            buildConfigField("boolean", "USE_CONFIG", "false")
         }
         patch3 {
             dimension "patch"
@@ -69,6 +70,7 @@ android {
             buildConfigField("boolean", "PATCH_1", "false")
             buildConfigField("boolean", "PATCH_2", "false")
             buildConfigField("boolean", "PATCH_3", "true")
+            buildConfigField("boolean", "USE_CONFIG", "false")
         }
         full {
             dimension "patch"
@@ -85,6 +87,7 @@ android {
             buildConfigField("boolean", "PATCH_1", "true")
             buildConfigField("boolean", "PATCH_2", "true")
             buildConfigField("boolean", "PATCH_3", "true")
+            buildConfigField("boolean", "USE_CONFIG", "false")
         }
         legacy {
             dimension "patch"
@@ -101,6 +104,27 @@ android {
             buildConfigField("boolean", "PATCH_1", "true")
             buildConfigField("boolean", "PATCH_2", "true")
             buildConfigField("boolean", "PATCH_3", "true")
+            buildConfigField("boolean", "USE_CONFIG", "false")
+        }
+        LP {
+            dimension "patch"
+
+            zygisk {
+                packages(ZygoteLoader.ALL_PACKAGES)
+
+                property("PATCH_1", "true")
+                property("PATCH_2", "true")
+                property("PATCH_3", "true")
+
+                id = "com_v7878_pmpatch_lp"
+                name = "PMPatchLP"
+                archiveName = "PMPatchLP"
+            }
+
+            buildConfigField("boolean", "PATCH_1", "true")
+            buildConfigField("boolean", "PATCH_2", "true")
+            buildConfigField("boolean", "PATCH_3", "true")
+            buildConfigField("boolean", "USE_CONFIG", "true")
         }
     }
 
