@@ -1,7 +1,6 @@
 package com.v7878.hooks.pmpatch;
 
 import static android.content.pm.PackageManager.SIGNATURE_MATCH;
-import static android.os.Build.VERSION.SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
@@ -18,21 +17,22 @@ public class HookList {
         if (!system_server && BuildConfig.PATCH_1) {
             int state_offset = fieldOffset(getDeclaredField(Signature.class, "state"));
 
-            HookTransformer verify_impl = (original, stack) -> {
-                var accessor = stack.accessor();
+            HookTransformer verify_impl = (original, frame) -> {
+                HTF.printStackTrace(frame);
+                var accessor = frame.accessor();
 
                 Signature thiz = accessor.getReference(0);
                 switch (thiz.getAlgorithm().toLowerCase()) {
                     case "rsa-sha1", "sha1withrsa", "sha256withdsa", "sha256withrsa" -> {
                         int state = AndroidUnsafe.getIntO(thiz, state_offset);
                         if (state == 3 /* Signature.VERIFY */) {
-                            stack.accessor().setBoolean(RETURN_VALUE_IDX, true);
+                            frame.accessor().setBoolean(RETURN_VALUE_IDX, true);
                             return;
                         }
                     }
                 }
 
-                Transformers.invokeExactWithFrame(original, stack);
+                Transformers.invokeExactWithFrame(original, frame);
             };
 
             hooks.add(verify_impl, "java.security.Signature", "verify", "boolean", "byte[]");
@@ -46,26 +46,13 @@ public class HookList {
         }
 
         if (system_server && BuildConfig.PATCH_3) {
-            HookTransformer check_impl = !(SDK_INT == 33 || SDK_INT == 34) ?
-                    HTF.TRUE : (original, stack) -> {
-                boolean call_original = false;
-                var trace = Thread.currentThread().getStackTrace();
-                for (var element : trace) {
-                    if (element.getMethodName().equals("reconcilePackages")) {
-                        call_original = true;
-                        break;
-                    }
-                }
+            hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "android.content.pm.PackageParser$SigningDetails", "int");
+            hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "java.lang.String", "int");
+            hooks.add(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm./PackageParser$SigningDetails", "int");
 
-                if (call_original) {
-                    Transformers.invokeExactWithFrame(original, stack);
-                } else {
-                    stack.accessor().setBoolean(RETURN_VALUE_IDX, true);
-                }
-            };
-
-            hooks.add(check_impl, "android.content.pm.SigningDetails", "checkCapability", "boolean", "android.content.pm.SigningDetails", "int");
-            hooks.add(check_impl, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "android.content.pm.PackageParser$SigningDetails", "int");
+            hooks.add(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapability", "boolean", "android.content.pm.SigningDetails", "int");
+            hooks.add(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapability", "boolean", "java.lang.String", "int");
+            hooks.add(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm.SigningDetails", "int");
 
             hooks.add(HTF.return_constant(SIGNATURE_MATCH), "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
             hooks.add(HTF.return_constant(SIGNATURE_MATCH), "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
@@ -86,6 +73,11 @@ public class HookList {
             hooks.add(HTF.NOP, "com.android.server.pm.PackageManagerService", "assertPackageIsValid", "void", "android.content.pm.PackageParser$Package", "android.content.pm.PackageInfoLite");
             hooks.add(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid", "void", "com.android.server.pm.pkg.AndroidPackage", "int", "int");
             hooks.add(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid", "void", "com.android.server.pm.parsing.pkg.AndroidPackage", "int", "int");
+
+            hooks.add(HTF.TRUE, "com.android.server.pm.InstallPackageHelper", "canSkipForcedPackageVerification", "boolean", "com.android.server.pm.parsing.pkg.AndroidPackage");
+
+            hooks.add(HTF.return_constant(Boolean.TRUE), "com.android.server.pm.permission.PermissionManagerServiceImpl", "getPrivilegedPermissionAllowlistState", "java.lang.Boolean", "com.android.server.pm.pkg.PackageState", "java.lang.String", "java.lang.String");
+            hooks.add(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions", "boolean", "com.android.server.pm.parsing.pkg.AndroidPackage", "java.lang.String", "java.lang.String");
 
             // android oreo
             //hooks.add(HTF.TODO, "com.android.server.pm.PackageManagerService", "scanPackageDirtyLI", "android.content.pm.PackageParser$Package", "android.content.pm.PackageParser$Package", "int", "int", "long", "android.os.UserHandle");
