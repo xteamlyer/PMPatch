@@ -1,6 +1,7 @@
 package com.v7878.hooks.pmpatch;
 
 import static android.content.pm.PackageManager.SIGNATURE_MATCH;
+import static android.os.Build.VERSION.SDK_INT;
 import static com.v7878.unsafe.Reflection.fieldOffset;
 import static com.v7878.unsafe.Reflection.getDeclaredField;
 import static com.v7878.unsafe.invoke.EmulatedStackFrame.RETURN_VALUE_IDX;
@@ -66,8 +67,26 @@ public class HookList {
             hooks.add(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapability", "boolean", "java.lang.String", "int");
             hooks.add(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm.SigningDetails", "int");
 
-            hooks.add(HTF.return_constant(SIGNATURE_MATCH), "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
-            hooks.add(HTF.return_constant(SIGNATURE_MATCH), "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
+            if (SDK_INT < 33) {
+                HookTransformer compare = (original, frame) -> {
+                    boolean call_original = true;
+                    var trace = Thread.currentThread().getStackTrace();
+                    for (var element : trace) {
+                        if (element.getMethodName().equals("scanPackageLI")) {
+                            call_original = false;
+                            break;
+                        }
+                    }
+
+                    if (call_original) {
+                        Transformers.invokeExactWithFrame(original, frame);
+                    } else {
+                        frame.accessor().setInt(RETURN_VALUE_IDX, SIGNATURE_MATCH);
+                    }
+                };
+                hooks.add(compare, "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
+                hooks.add(compare, "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
+            }
 
             hooks.add(HTF.FALSE, "com.android.server.pm.PackageManagerServiceUtils", "verifySignatures", "boolean", "com.android.server.pm.PackageSetting", "com.android.server.pm.SharedUserSetting", "com.android.server.pm.PackageSetting", "android.content.pm.SigningDetails", "boolean", "boolean", "boolean");
             hooks.add(HTF.FALSE, "com.android.server.pm.PackageManagerServiceUtils", "verifySignatures", "boolean", "com.android.server.pm.PackageSetting", "com.android.server.pm.PackageSetting", "android.content.pm.PackageParser$SigningDetails", "boolean", "boolean", "boolean");
