@@ -14,7 +14,6 @@ import com.v7878.zygisk.ZygoteLoader;
 import java.security.Signature;
 
 public class HookList {
-
     private static boolean booleanProperty(String name) {
         if (BuildConfig.USE_CONFIG) {
             return Boolean.parseBoolean(ZygoteLoader.getProperties()
@@ -59,43 +58,67 @@ public class HookList {
 
         if (system_server && BuildConfig.PATCH_3
                 && booleanProperty("PATCH_3")) {
-            hooks.addExact(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "android.content.pm.PackageParser$SigningDetails", "int");
-            hooks.addExact(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapability", "boolean", "java.lang.String", "int");
-            hooks.addExact(HTF.TRUE, "android.content.pm.PackageParser$SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm./PackageParser$SigningDetails", "int");
-
-            hooks.addExact(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapability", "boolean", "android.content.pm.SigningDetails", "int");
-            hooks.addExact(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapability", "boolean", "java.lang.String", "int");
-            hooks.addExact(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm.SigningDetails", "int");
+            if (SDK_INT >= 28) {
+                var impl = SDK_INT < 33 ? HTF.TRUE : HTF.constant(true, new String[]{"installPackagesLI"}, null);
+                // 28 - >>
+                hooks.addAll(impl, "android.content.pm.PackageParser$SigningDetails", "checkCapability");
+            }
+            if (SDK_INT >= 33) {
+                // 33 - >>
+                hooks.addAll(HTF.constant(true, new String[]{"installPackagesLI"}, new String[]{"reconcilePackages"}), "android.content.pm.SigningDetails", "checkCapability");
+            }
 
             if (SDK_INT < 33) {
                 HookTransformer compare = HTF.constant(SIGNATURE_MATCH, null, new String[]{"scanPackageLI"});
-                hooks.addExact(compare, "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
-                hooks.addExact(compare, "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
+                if (SDK_INT <= 27) {
+                    // 26 - 27
+                    hooks.addExact(compare, "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
+                } else {
+                    // 28 - >>
+                    hooks.addExact(compare, "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
+                }
             }
 
-            hooks.addExact(HTF.FALSE, "com.android.server.pm.PackageManagerServiceUtils", "verifySignatures", "boolean", "com.android.server.pm.PackageSetting", "com.android.server.pm.SharedUserSetting", "com.android.server.pm.PackageSetting", "android.content.pm.SigningDetails", "boolean", "boolean", "boolean");
-            hooks.addExact(HTF.FALSE, "com.android.server.pm.PackageManagerServiceUtils", "verifySignatures", "boolean", "com.android.server.pm.PackageSetting", "com.android.server.pm.PackageSetting", "android.content.pm.PackageParser$SigningDetails", "boolean", "boolean", "boolean");
+            if (SDK_INT <= 27) {
+                // 26 - 27
+                hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerService", "verifySignaturesLP");
+            } else {
+                // 28 - >>
+                hooks.addAll(HTF.FALSE, "com.android.server.pm.PackageManagerServiceUtils", "verifySignatures");
+            }
 
-            hooks.addExact(HTF.TRUE, "com.android.server.pm.PackageManagerServiceUtils", "isDowngradePermitted", "boolean", "int", "boolean");
+            if (SDK_INT == 31 || SDK_INT == 32) {
+                // 31 - 32
+                hooks.addAll(HTF.TRUE, "com.android.server.pm.PackageManagerService", "doesSignatureMatchForPermissions");
+            } else if (SDK_INT >= 33) {
+                // 33 - >>
+                hooks.addAll(HTF.TRUE, "com.android.server.pm.InstallPackageHelper", "doesSignatureMatchForPermissions");
+            }
 
-            hooks.addExact(HTF.NOP, "com.android.server.pm.PackageManagerServiceUtils", "checkDowngrade", "void", "com.android.server.pm.parsing.pkg.AndroidPackage", "android.content.pm.PackageInfoLite");
-            hooks.addExact(HTF.NOP, "com.android.server.pm.PackageManagerServiceUtils", "checkDowngrade", "void", "com.android.server.pm.pkg.AndroidPackage", "android.content.pm.PackageInfoLite");
-            hooks.addExact(HTF.NOP, "com.android.server.pm.PackageManagerService", "checkDowngrade", "void", "android.content.pm.PackageParser$Package", "android.content.pm.PackageInfoLite");
-            hooks.addExact(HTF.NOP, "com.android.server.pm.PackageManagerService", "checkDowngrade", "void", "com.android.server.pm.parsing.pkg.AndroidPackage", "android.content.pm.PackageInfoLite");
+            if (SDK_INT <= 32) {
+                // 26 - 32
+                hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerService", "checkDowngrade");
+                // 26 - 32
+                hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerService", "assertPackageIsValid");
+            } else {
+                // 33 - >>
+                hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerServiceUtils", "checkDowngrade");
+                // 33 - >>
+                hooks.addAll(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid");
+            }
 
-            hooks.addExact(HTF.TRUE, "com.android.server.pm.InstallPackageHelper", "doesSignatureMatchForPermissions", "boolean", "java.lang.String", "com.android.server.pm.parsing.pkg.ParsedPackage", "int");
-            hooks.addExact(HTF.TRUE, "com.android.server.pm.InstallPackageHelper", "doesSignatureMatchForPermissions", "boolean", "java.lang.String", "com.android.internal.pm.parsing.pkg.ParsedPackage", "int");
+            switch (SDK_INT) {
+                case 26, 27, 28, 29, 30 -> // 26 - 30
+                        hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerService", "hasPrivappWhitelistEntry");
+                case 31, 32 -> // 31 - 32
+                        hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerService", "isInSystemConfigPrivAppDenyPermissions");
+                case 33 -> // 33
+                        hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions");
+                default -> // 34 - >>
+                        hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions");
+            }
 
-            hooks.addExact(HTF.NOP, "com.android.server.pm.PackageManagerService", "assertPackageIsValid", "void", "android.content.pm.PackageParser$Package", "android.content.pm.PackageInfoLite");
-            hooks.addExact(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid", "void", "com.android.server.pm.pkg.AndroidPackage", "int", "int");
-            hooks.addExact(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid", "void", "com.android.server.pm.parsing.pkg.AndroidPackage", "int", "int");
-
-            hooks.addExact(HTF.TRUE, "com.android.server.pm.InstallPackageHelper", "canSkipForcedPackageVerification", "boolean", "com.android.server.pm.parsing.pkg.AndroidPackage");
-
-            hooks.addExact(HTF.constant(Boolean.TRUE), "com.android.server.pm.permission.PermissionManagerServiceImpl", "getPrivilegedPermissionAllowlistState", "java.lang.Boolean", "com.android.server.pm.pkg.PackageState", "java.lang.String", "java.lang.String");
-            hooks.addExact(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions", "boolean", "com.android.server.pm.parsing.pkg.AndroidPackage", "java.lang.String", "java.lang.String");
-
-            // android oreo
+            // android oreo ???
             //hooks.add(HTF.TODO, "com.android.server.pm.PackageManagerService", "scanPackageDirtyLI", "android.content.pm.PackageParser$Package", "android.content.pm.PackageParser$Package", "int", "int", "long", "android.os.UserHandle");
         }
     }
