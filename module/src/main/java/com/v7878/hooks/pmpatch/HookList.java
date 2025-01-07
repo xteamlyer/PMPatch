@@ -68,22 +68,7 @@ public class HookList {
             hooks.addExact(HTF.TRUE, "android.content.pm.SigningDetails", "checkCapabilityRecover", "boolean", "android.content.pm.SigningDetails", "int");
 
             if (SDK_INT < 33) {
-                HookTransformer compare = (original, frame) -> {
-                    boolean call_original = true;
-                    var trace = Thread.currentThread().getStackTrace();
-                    for (var element : trace) {
-                        if (element.getMethodName().equals("scanPackageLI")) {
-                            call_original = false;
-                            break;
-                        }
-                    }
-
-                    if (call_original) {
-                        Transformers.invokeExactWithFrame(original, frame);
-                    } else {
-                        frame.accessor().setInt(RETURN_VALUE_IDX, SIGNATURE_MATCH);
-                    }
-                };
+                HookTransformer compare = HTF.constant(SIGNATURE_MATCH, null, new String[]{"scanPackageLI"});
                 hooks.addExact(compare, "com.android.server.pm.PackageManagerServiceUtils", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
                 hooks.addExact(compare, "com.android.server.pm.PackageManagerService", "compareSignatures", "int", "android.content.pm.Signature[]", "android.content.pm.Signature[]");
             }
@@ -107,7 +92,7 @@ public class HookList {
 
             hooks.addExact(HTF.TRUE, "com.android.server.pm.InstallPackageHelper", "canSkipForcedPackageVerification", "boolean", "com.android.server.pm.parsing.pkg.AndroidPackage");
 
-            hooks.addExact(HTF.return_constant(Boolean.TRUE), "com.android.server.pm.permission.PermissionManagerServiceImpl", "getPrivilegedPermissionAllowlistState", "java.lang.Boolean", "com.android.server.pm.pkg.PackageState", "java.lang.String", "java.lang.String");
+            hooks.addExact(HTF.constant(Boolean.TRUE), "com.android.server.pm.permission.PermissionManagerServiceImpl", "getPrivilegedPermissionAllowlistState", "java.lang.Boolean", "com.android.server.pm.pkg.PackageState", "java.lang.String", "java.lang.String");
             hooks.addExact(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions", "boolean", "com.android.server.pm.parsing.pkg.AndroidPackage", "java.lang.String", "java.lang.String");
 
             // android oreo
