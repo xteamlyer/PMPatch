@@ -59,13 +59,13 @@ public class HookList {
         if (system_server && BuildConfig.PATCH_3
                 && booleanProperty("PATCH_3")) {
             if (SDK_INT >= 28) {
-                var impl = SDK_INT < 33 ? HTF.TRUE : HTF.constant(true, new String[]{"installPackagesLI"}, null);
+                var impl = SDK_INT < 33 ? HTF.TRUE : HTF.constant(true, new String[]{"installPackagesLI", "preparePackageLI"}, null);
                 // 28 - >>
                 hooks.addAll(impl, "android.content.pm.PackageParser$SigningDetails", "checkCapability");
             }
             if (SDK_INT >= 33) {
                 // 33 - >>
-                hooks.addAll(HTF.constant(true, new String[]{"installPackagesLI"}, new String[]{"reconcilePackages"}), "android.content.pm.SigningDetails", "checkCapability");
+                hooks.addAll(HTF.constant(true, new String[]{"installPackagesLI", "preparePackageLI"}, new String[]{"reconcilePackages"}), "android.content.pm.SigningDetails", "checkCapability");
             }
 
             if (SDK_INT < 33) {
@@ -115,7 +115,7 @@ public class HookList {
                 case 33 -> // 33
                         hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions");
                 default -> // 34 - >>
-                        hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "isInSystemConfigPrivAppDenyPermissions");
+                        hooks.addAll(HTF.TRUE, "com.android.server.pm.permission.PermissionManagerServiceImpl", "getPrivilegedPermissionAllowlistState");
             }
 
             // android oreo ???
