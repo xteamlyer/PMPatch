@@ -22,13 +22,19 @@ public class HTF {
     public static final HookTransformer NOP = (original, frame) -> {
         printStackTrace(frame);
     };
-    public static final HookTransformer FALSE = (original, frame) -> {
-        printStackTrace(frame);
-        frame.accessor().setBoolean(RETURN_VALUE_IDX, false);
-    };
+
+    public static final HookTransformer FALSE = NOP; // default value
+
     public static final HookTransformer TRUE = (original, frame) -> {
         printStackTrace(frame);
-        frame.accessor().setBoolean(RETURN_VALUE_IDX, true);
+        var ret = frame.type().returnType();
+        if (ret == boolean.class) {
+            frame.accessor().setBoolean(RETURN_VALUE_IDX, true);
+        } else if (ret == void.class) {
+            // nop
+        } else {
+            Log.e(TAG, "Unexpected return type: " + ret, new StackException());
+        }
     };
 
     public static HookTransformer constant(Object value) {
@@ -70,7 +76,9 @@ public class HTF {
             if (!run_flag || exclude_flag) {
                 Transformers.invokeExactWithFrame(original, frame);
             } else {
-                frame.accessor().setValue(RETURN_VALUE_IDX, value);
+                if (frame.type().returnType() != void.class) {
+                    frame.accessor().setValue(RETURN_VALUE_IDX, value);
+                }
             }
         };
     }
