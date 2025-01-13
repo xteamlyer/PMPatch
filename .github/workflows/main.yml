@@ -20,12 +20,14 @@ jobs:
       with:
         java-version: 22
         distribution: temurin
-
-    - name: Make gradlew executable
-      run: chmod +x ./gradlew
-
-    - name: Assemble
-      run: ./gradlew assembleRelease
+        
+    - name: Setup Gradle 8.10
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: "8.10"
+        
+    - name: Build with Gradle 8.10
+      run: gradle assembleRelease
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@main
