@@ -16,6 +16,9 @@ android {
         targetSdk 35
         versionCode 1_000_002
         versionName "v1.0.2"
+
+        buildConfigField("boolean", "RUN_FOR_APPLICATIONS", "false")
+        buildConfigField("boolean", "RUN_FOR_SYSTEM_SERVER", "true")
     }
 
     buildFeatures {

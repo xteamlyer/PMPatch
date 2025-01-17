@@ -22,9 +22,8 @@ public class HookList {
         return true;
     }
 
-    public static void init(BulkHooker hooks, boolean system_server) {
-        if (!system_server && BuildConfig.PATCH_1
-                && booleanProperty("PATCH_1")) {
+    public static void initPreliminary(BulkHooker hooks) {
+        if (BuildConfig.PATCH_1 && booleanProperty("PATCH_1")) {
             int state_offset = fieldOffset(getDeclaredField(Signature.class, "state"));
 
             HookTransformer verify_impl = (original, frame) -> {
@@ -51,13 +50,13 @@ public class HookList {
             hooks.addExact(HTF.TRUE, "com.android.org.conscrypt.OpenSSLSignature", "engineVerify", "boolean", "byte[]");
         }
 
-        if (!system_server && BuildConfig.PATCH_2
-                && booleanProperty("PATCH_2")) {
+        if (BuildConfig.PATCH_2 && booleanProperty("PATCH_2")) {
             hooks.addExact(HTF.TRUE, "java.security.MessageDigest", "isEqual", "boolean", "byte[]", "byte[]");
         }
+    }
 
-        if (system_server && BuildConfig.PATCH_3
-                && booleanProperty("PATCH_3")) {
+    public static void initSystem(BulkHooker hooks) {
+        if (BuildConfig.PATCH_3 && booleanProperty("PATCH_3")) {
             if (SDK_INT >= 28) {
                 var impl = SDK_INT < 33 ? HTF.TRUE : HTF.constant(true, new String[]{"installPackagesLI", "preparePackageLI"}, null);
                 // 28 - >>
@@ -99,12 +98,23 @@ public class HookList {
                 // 26 - 32
                 hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerService", "checkDowngrade");
                 // 26 - 32
-                hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerService", "assertPackageIsValid");
+                //hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerService", "assertPackageIsValid");
             } else {
                 // 33 - >>
                 hooks.addAll(HTF.NOP, "com.android.server.pm.PackageManagerServiceUtils", "checkDowngrade");
                 // 33 - >>
-                hooks.addAll(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid");
+                //hooks.addAll(HTF.NOP, "com.android.server.pm.InstallPackageHelper", "assertPackageIsValid");
+            }
+
+            if (SDK_INT >= 33) {
+                // 33 - >>
+                hooks.addAll(HTF.NOP, "com.android.server.pm.ScanPackageUtils", "assertMinSignatureSchemeIsValid");
+            }
+            if (SDK_INT >= 30) {
+                // 30 - >>
+                hooks.addAll(HTF.FALSE, "android.util.apk.ApkSignatureVerifier", "getMinimumSignatureSchemeVersionForTargetSdk");
+                // 30 - >>
+                hooks.addAll(HTF.FALSE, "com.android.apksig.ApkVerifier", "getMinimumSignatureSchemeVersionForTargetSdk");
             }
 
             switch (SDK_INT) {
@@ -121,5 +131,8 @@ public class HookList {
             // android oreo ???
             //hooks.add(HTF.TODO, "com.android.server.pm.PackageManagerService", "scanPackageDirtyLI", "android.content.pm.PackageParser$Package", "android.content.pm.PackageParser$Package", "int", "int", "long", "android.os.UserHandle");
         }
+    }
+
+    public static void initApplication(String package_name, BulkHooker hooks) {
     }
 }
