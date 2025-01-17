@@ -92,23 +92,6 @@ android {
             buildConfigField("boolean", "PATCH_3", "true")
             buildConfigField("boolean", "USE_CONFIG", "false")
         }
-        legacy {
-            dimension "patch"
-
-            zygisk {
-                packages(ZygoteLoader.PACKAGE_SYSTEM_SERVER)
-
-                id = "com_v7878_pmpatch"
-                name = "PMPatchLegacy"
-                updateJson = "${updateJsonBase}update.json"
-                archiveName = "PMPatchLegacy"
-            }
-
-            buildConfigField("boolean", "PATCH_1", "true")
-            buildConfigField("boolean", "PATCH_2", "true")
-            buildConfigField("boolean", "PATCH_3", "true")
-            buildConfigField("boolean", "USE_CONFIG", "false")
-        }
         LP {
             dimension "patch"
 
