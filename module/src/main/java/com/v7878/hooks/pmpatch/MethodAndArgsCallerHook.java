@@ -18,11 +18,11 @@ public class MethodAndArgsCallerHook {
     private static final String SYSTEM_SERVER = "com.android.server.SystemServer";
     private static final String RUNTIME_INIT = "com.android.internal.os.RuntimeInit";
 
-    private static void checkSystemServer(EmulatedStackFrame frame) throws Throwable {
+    private static void runForSystemServer(EmulatedStackFrame frame) throws Throwable {
         var accessor = frame.accessor();
         if (SYSTEM_SERVER.equals(accessor.getReference(0))) {
             ClassLoader loader = accessor.getReference(2);
-            SystemServerHook.init(loader);
+            EntryPoint.mainSystem(loader);
         }
     }
 
@@ -36,7 +36,7 @@ public class MethodAndArgsCallerHook {
 
         Hooks.hook(method, EntryPointType.CURRENT, (original, frame) -> {
             try {
-                checkSystemServer(frame);
+                runForSystemServer(frame);
             } catch (Throwable th) {
                 Log.e(TAG, "Exception", th);
             }

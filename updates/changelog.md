@@ -1,1 +1,2 @@
-- Fixed installation of applications with different signatures on some new devices
+- Added support for Android 16
+- On some devices, crashes of applications such as Google services, Bluetooth, etc. have been fixed
